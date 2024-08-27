@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 const CreateMeet = () => {
   const socket = useSocket();
   const router = useRouter();
-  
+
   function handleCreateMeet() {
     if (!socket) {
       toast.error("Socket is not available");
