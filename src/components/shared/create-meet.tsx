@@ -15,18 +15,10 @@ const CreateMeet = () => {
       return;
     }
 
-    socket.emit(
-      "create-meet",
-      (err: string | null, response: { meetId: string }) => {
-        if (err) {
-          toast.error("Couldn't Create Meet! Try again");
-          console.error(err);
-          return;
-        }
-        toast.success(`Meet created with id: ${response.meetId}`);
-        router.push(`/${response.meetId}`);
-      }
-    );
+    socket.emit("create-meet", (response: { meetId: string }) => {
+      router.push(`/${response.meetId}`);
+      toast.success(`Meet created with id: ${response.meetId}`);
+    });
   }
 
   return <Button onClick={handleCreateMeet}>CreateMeet</Button>;
