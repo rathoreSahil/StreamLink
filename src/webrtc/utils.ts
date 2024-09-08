@@ -9,6 +9,7 @@ const getClosestStun = async (): Promise<string | number> => {
     .trim()
     .split("\n")
     .map((addr) => {
+      if (!geoLocs[addr.split(":")[0]]) return [addr, Infinity];
       const [stunLat, stunLon] = geoLocs[addr.split(":")[0]];
       const dist =
         ((latitude - stunLat) ** 2 + (longitude - stunLon) ** 2) ** 0.5;
@@ -26,6 +27,7 @@ const getUserMedia = async (): Promise<MediaStream> => {
     video: true,
   };
 
+  console.log({ navigator });
   const mediaStream = await navigator.mediaDevices.getUserMedia(
     mediaConstraints
   );

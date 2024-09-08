@@ -13,6 +13,7 @@ type MeetParams = {
 };
 
 const Meet = ({ params }: MeetParams) => {
+  const { roomId } = params;
   const socket = useSocket();
   const { polite } = usePoliteState();
 
@@ -61,7 +62,7 @@ const Meet = ({ params }: MeetParams) => {
       try {
         makingOffer.current = true;
         await peerConnection.setLocalDescription();
-        socket?.emit("signal", {
+        socket?.emit("signal", roomId, {
           description: peerConnection.localDescription,
         });
       } catch (err) {
@@ -76,7 +77,7 @@ const Meet = ({ params }: MeetParams) => {
   useEffect(() => {
     if (!peerConnection) return;
     peerConnection.onicecandidate = ({ candidate }) => {
-      socket?.emit("signal", { candidate });
+      socket?.emit("signal", roomId, { candidate });
     };
   }, [peerConnection, socket]);
 
@@ -98,7 +99,7 @@ const Meet = ({ params }: MeetParams) => {
           await peerConnection.setRemoteDescription(description);
           if (description.type === "offer") {
             await peerConnection.setLocalDescription();
-            socket.emit("signal", {
+            socket.emit("signal", roomId, {
               description: peerConnection.localDescription,
             });
           }
@@ -207,7 +208,7 @@ const Meet = ({ params }: MeetParams) => {
 
   function hangUpCall() {
     closeVideoCall();
-    socket?.emit("hang-up");
+    socket?.emit("hang-up", roomId);
   }
 
   return (
