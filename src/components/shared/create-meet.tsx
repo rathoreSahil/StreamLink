@@ -1,11 +1,13 @@
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
+import { usePoliteState } from "@/context/polite-state-provider";
 import { useSocket } from "@/context/socket-provider";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 
 const CreateMeet = () => {
   const socket = useSocket();
   const router = useRouter();
+  const { setPolite } = usePoliteState();
 
   function handleCreateMeet() {
     if (!socket) {
@@ -19,6 +21,7 @@ const CreateMeet = () => {
       router.push(`/${response.meetId}`);
       toast.success(`Meet created with id: ${response.meetId}`);
     });
+    setPolite(false);
   }
 
   return <Button onClick={handleCreateMeet}>CreateMeet</Button>;

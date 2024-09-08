@@ -1,6 +1,3 @@
-import toast from "react-hot-toast";
-import { handleGetUserMediaError } from "@/webrtc/error";
-
 const getClosestStun = async (): Promise<string | number> => {
   const GEO_LOC_URL = process.env.NEXT_PUBLIC_GEO_LOC_URL!;
   const IPV4_URL = process.env.NEXT_PUBLIC_IPV4_URL!;
@@ -25,8 +22,8 @@ const getClosestStun = async (): Promise<string | number> => {
 
 const getUserMedia = async (): Promise<MediaStream> => {
   const mediaConstraints = {
-    audio: true, // We want an audio track
-    video: true, // And we want a video track
+    audio: true,
+    video: true,
   };
 
   const mediaStream = await navigator.mediaDevices.getUserMedia(
@@ -57,5 +54,18 @@ const createPeerConnection = async (): Promise<RTCPeerConnection> => {
 
   return myPeerConnection;
 };
+
+// let makingOffer = false;
+// const handleNegotiationNeededEvent = async () => {
+//   try {
+//     makingOffer = true;
+//     await pc.setLocalDescription();
+//     signaler.send({ description: pc.localDescription });
+//   } catch (err) {
+//     console.error(err);
+//   } finally {
+//     makingOffer = false;
+//   }
+// };
 
 export { getUserMedia, createPeerConnection };

@@ -17,7 +17,7 @@ const handleGetUserMediaError = (e: any) => {
       break;
   }
 
-  //   closeVideoCall();
+    // closeVideoCall();
 };
 
 export { handleGetUserMediaError };
