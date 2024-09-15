@@ -1,10 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { usePoliteState } from "@/context/polite-state-provider";
 import { useSocket } from "@/context/socket-provider";
 import { handleGetUserMediaError } from "@/webrtc/error";
 import { createPeerConnection, getUserMedia } from "@/webrtc/utils";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -14,17 +14,17 @@ type MeetParams = {
 
 const Meet = ({ params }: MeetParams) => {
   const { roomId } = params;
+  const router = useRouter();
   const socket = useSocket();
-  const { polite } = usePoliteState();
-
-  const makingOffer = useRef(false);
-  const ignoreOffer = useRef(false);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const hangupButtonRef = useRef<HTMLButtonElement>(null);
 
   const [peerConnection, setPeerConnection] =
     useState<RTCPeerConnection | null>();
+
+  useEffect(() => {
+    socket?.emit("join-room", roomId);
+  }, [roomId, socket]);
 
   useEffect(() => {
     createPeerConnection()
@@ -60,7 +60,6 @@ const Meet = ({ params }: MeetParams) => {
 
     peerConnection.onnegotiationneeded = async () => {
       try {
-        makingOffer.current = true;
         await peerConnection.setLocalDescription();
         socket?.emit("signal", roomId, {
           description: peerConnection.localDescription,
@@ -68,18 +67,24 @@ const Meet = ({ params }: MeetParams) => {
       } catch (err) {
         toast.error("Error creating offer");
         console.error(err);
-      } finally {
-        makingOffer.current = false;
       }
     };
-  }, [peerConnection, socket]);
+
+    return () => {
+      peerConnection.onnegotiationneeded = null;
+    };
+  }, [peerConnection, roomId, socket]);
 
   useEffect(() => {
     if (!peerConnection) return;
     peerConnection.onicecandidate = ({ candidate }) => {
       socket?.emit("signal", roomId, { candidate });
     };
-  }, [peerConnection, socket]);
+
+    return () => {
+      peerConnection.onicecandidate = null;
+    };
+  }, [peerConnection, roomId, socket]);
 
   useEffect(() => {
     if (!socket) return;
@@ -87,16 +92,9 @@ const Meet = ({ params }: MeetParams) => {
       try {
         if (!peerConnection) return;
         if (description) {
-          const offerCollision =
-            description.type === "offer" &&
-            (makingOffer.current || peerConnection.signalingState !== "stable");
-
-          ignoreOffer.current = !polite && offerCollision;
-          if (ignoreOffer) {
-            return;
-          }
-
-          await peerConnection.setRemoteDescription(description);
+          await peerConnection.setRemoteDescription(
+            new RTCSessionDescription(description)
+          );
           if (description.type === "offer") {
             await peerConnection.setLocalDescription();
             socket.emit("signal", roomId, {
@@ -104,13 +102,7 @@ const Meet = ({ params }: MeetParams) => {
             });
           }
         } else if (candidate) {
-          try {
-            await peerConnection.addIceCandidate(candidate);
-          } catch (err) {
-            if (!ignoreOffer) {
-              throw err;
-            }
-          }
+          await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
         }
       } catch (err) {
         console.error(err);
@@ -120,7 +112,7 @@ const Meet = ({ params }: MeetParams) => {
     return () => {
       socket.off("signal");
     };
-  }, [peerConnection, polite, socket]);
+  }, [peerConnection, roomId, socket]);
 
   useEffect(() => {
     if (!peerConnection) return;
@@ -129,11 +121,19 @@ const Meet = ({ params }: MeetParams) => {
         peerConnection.restartIce();
       }
     };
+
+    return () => {
+      peerConnection.oniceconnectionstatechange = null;
+    };
   }, [peerConnection]);
 
   useEffect(() => {
     if (!peerConnection) return;
     peerConnection.ontrack = ({ track, streams: [stream] }) => {
+      if (track.enabled && remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+      }
+
       track.onunmute = () => {
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = stream;
@@ -141,9 +141,9 @@ const Meet = ({ params }: MeetParams) => {
       };
     };
 
-    if (hangupButtonRef.current) {
-      hangupButtonRef.current.disabled = false;
-    }
+    return () => {
+      peerConnection.ontrack = null;
+    };
   }, [peerConnection]);
 
   const closeVideoCall = useCallback(() => {
@@ -176,23 +176,8 @@ const Meet = ({ params }: MeetParams) => {
       peerConnection.close();
       setPeerConnection(null);
     }
-
-    if (hangupButtonRef.current) {
-      hangupButtonRef.current.disabled = true;
-    }
-  }, [peerConnection]);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on("hang-up", () => {
-      closeVideoCall();
-    });
-
-    return () => {
-      socket.off("hang-up");
-    };
-  }, [socket, closeVideoCall]);
+    router.push("/");
+  }, [peerConnection, router]);
 
   useEffect(() => {
     if (!peerConnection) return;
@@ -206,18 +191,11 @@ const Meet = ({ params }: MeetParams) => {
     };
   }, [closeVideoCall, peerConnection]);
 
-  function hangUpCall() {
-    closeVideoCall();
-    socket?.emit("hang-up", roomId);
-  }
-
   return (
     <div className="flex gap-4">
       <video className="rounded-lg" ref={localVideoRef} autoPlay muted></video>
       <video className="rounded-lg" ref={remoteVideoRef} autoPlay></video>
-      <Button ref={hangupButtonRef} onClick={hangUpCall} disabled>
-        Hang Up
-      </Button>
+      <Button onClick={closeVideoCall}>Hang Up</Button>
     </div>
   );
 };

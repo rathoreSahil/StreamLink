@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 const CreateMeet = () => {
   const socket = useSocket();
   const router = useRouter();
-  const { setPolite } = usePoliteState();
+  // const { setPolite } = usePoliteState();
 
   function handleCreateMeet() {
     if (!socket) {
@@ -21,7 +21,7 @@ const CreateMeet = () => {
       router.push(`/${response.meetId}`);
       toast.success(`Meet created with id: ${response.meetId}`);
     });
-    setPolite(false);
+    // setPolite(true);
   }
 
   return <Button onClick={handleCreateMeet}>CreateMeet</Button>;

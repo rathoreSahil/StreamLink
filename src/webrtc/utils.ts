@@ -27,7 +27,6 @@ const getUserMedia = async (): Promise<MediaStream> => {
     video: true,
   };
 
-  console.log({ navigator });
   const mediaStream = await navigator.mediaDevices.getUserMedia(
     mediaConstraints
   );
@@ -43,31 +42,7 @@ const createPeerConnection = async (): Promise<RTCPeerConnection> => {
       },
     ],
   });
-
-  // myPeerConnection.onicecandidate = handleICECandidateEvent;
-  // myPeerConnection.ontrack = handleTrackEvent;
-  // myPeerConnection.onnegotiationneeded = handleNegotiationNeededEvent;
-  // myPeerConnection.onremovetrack = handleRemoveTrackEvent;
-  // myPeerConnection.oniceconnectionstatechange =
-  //   handleICEConnectionStateChangeEvent;
-  // myPeerConnection.onicegatheringstatechange =
-  //   handleICEGatheringStateChangeEvent;
-  // myPeerConnection.onsignalingstatechange = handleSignalingStateChangeEvent;
-
   return myPeerConnection;
 };
-
-// let makingOffer = false;
-// const handleNegotiationNeededEvent = async () => {
-//   try {
-//     makingOffer = true;
-//     await pc.setLocalDescription();
-//     signaler.send({ description: pc.localDescription });
-//   } catch (err) {
-//     console.error(err);
-//   } finally {
-//     makingOffer = false;
-//   }
-// };
 
 export { getUserMedia, createPeerConnection };
