@@ -7,6 +7,9 @@ import { createPeerConnection, getUserMedia } from "@/webrtc/utils";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { FaPhoneSlash } from "react-icons/fa";
+import { FaVideo } from "react-icons/fa";
+import { FaMicrophone } from "react-icons/fa";
 
 type MeetParams = {
   params: { roomId: string };
@@ -192,11 +195,44 @@ const Meet = ({ params }: MeetParams) => {
   }, [closeVideoCall, peerConnection]);
 
   return (
-    <div className="flex gap-4">
-      <video className="rounded-lg" ref={localVideoRef} autoPlay muted></video>
-      <video className="rounded-lg" ref={remoteVideoRef} autoPlay></video>
-      <Button onClick={closeVideoCall}>Hang Up</Button>
-    </div>
+    <>
+      <div className="flex gap-4 py-4">
+        <video
+          className="flex-1 rounded-lg"
+          ref={localVideoRef}
+          autoPlay
+          muted
+        ></video>
+        <video
+          className="flex-1 rounded-lg"
+          ref={remoteVideoRef}
+          autoPlay
+        ></video>
+      </div>
+      <div className="flex items-center justify-center gap-4 py-4">
+        <Button
+          // variant="secondary"
+          // onClick={closeVideoCall}
+          className="rounded-full h-12 w-12 px-[14px]"
+        >
+          <FaVideo className="h-8 w-8" />
+        </Button>
+        <Button
+          variant="secondary"
+          // onClick={closeVideoCall}
+          className="rounded-full h-12 w-12"
+        >
+          <FaMicrophone className="h-8 w-8" />
+        </Button>
+        <Button
+          variant="destructive"
+          onClick={closeVideoCall}
+          className="rounded-full h-12 w-12 px-[14px]"
+        >
+          <FaPhoneSlash className="h-8 w-8" />
+        </Button>
+      </div>
+    </>
   );
 };
 
