@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/context/socket-provider";
+import { cn } from "@/lib/utils";
 import { handleGetUserMediaError } from "@/webrtc/error";
 import { createPeerConnection, getUserMedia } from "@/webrtc/utils";
 import { useRouter } from "next/navigation";
@@ -135,11 +136,13 @@ const Meet = ({ params }: MeetParams) => {
     peerConnection.ontrack = ({ track, streams: [stream] }) => {
       if (track.enabled && remoteVideoRef.current) {
         remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.classList.remove("hidden");
       }
 
       track.onunmute = () => {
         if (remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = stream;
+          remoteVideoRef.current.classList.remove("hidden");
         }
       };
     };
@@ -165,6 +168,7 @@ const Meet = ({ params }: MeetParams) => {
 
         remoteVideoRef.current.src = "";
         remoteVideoRef.current.srcObject = null;
+        remoteVideoRef.current.classList.add("hidden");
       }
 
       if (localVideoRef.current && localVideoRef.current.srcObject) {
@@ -195,21 +199,21 @@ const Meet = ({ params }: MeetParams) => {
   }, [closeVideoCall, peerConnection]);
 
   return (
-    <>
-      <div className="flex gap-4 py-4">
+    <div className="flex flex-col h-lvh py-4">
+      <div className="flex flex-1 justify-center gap-4 px-16 py-4">
         <video
-          className="flex-1 rounded-lg"
+          className="object-cover w-full max-h-[85vh] rounded-lg"
           ref={localVideoRef}
           autoPlay
           muted
         ></video>
         <video
-          className="flex-1 rounded-lg"
+          className="rounded-lg hidden"
           ref={remoteVideoRef}
           autoPlay
         ></video>
       </div>
-      <div className="flex items-center justify-center gap-4 py-4">
+      <div className="flex items-center justify-center gap-4 py-2 px-8 bg-gray-800 mx-auto rounded-3xl w-2/5 h-[10vh]">
         <Button
           // variant="secondary"
           // onClick={closeVideoCall}
@@ -232,7 +236,7 @@ const Meet = ({ params }: MeetParams) => {
           <FaPhoneSlash className="h-8 w-8" />
         </Button>
       </div>
-    </>
+    </div>
   );
 };
 
