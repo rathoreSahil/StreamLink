@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/context/socket-provider";
-import { cn } from "@/lib/utils";
 import { handleGetUserMediaError } from "@/webrtc/error";
 import { createPeerConnection, getUserMedia } from "@/webrtc/utils";
 import { useRouter } from "next/navigation";
@@ -11,6 +10,12 @@ import toast from "react-hot-toast";
 import { FaPhoneSlash } from "react-icons/fa";
 import { FaVideo } from "react-icons/fa";
 import { FaMicrophone } from "react-icons/fa";
+import { IoIosArrowUp } from "react-icons/io";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 type MeetParams = {
   params: { roomId: string };
@@ -57,6 +62,11 @@ const Meet = ({ params }: MeetParams) => {
         console.error(error);
         handleGetUserMediaError(error);
       });
+  }, [peerConnection]);
+
+  useEffect(() => {
+    if (!peerConnection) return;
+    navigator.mediaDevices.ondevicechange = async () => {};
   }, [peerConnection]);
 
   useEffect(() => {
@@ -226,20 +236,36 @@ const Meet = ({ params }: MeetParams) => {
           autoPlay
         ></video>
       </div>
-      <div className="flex items-center justify-center gap-4 py-2 px-4 bg-gray-800 mx-auto rounded-3xl w-2/5 h-[8vh]">
-        <Button
-          // onClick={closeVideoCall}
-          className="rounded-full h-12 w-12 px-[14px]"
-        >\
-          <FaVideo className="h-8 w-8" />
-        </Button>
-        <Button
-          variant="secondary"
-          // onClick={closeVideoCall}
-          className="rounded-full h-12 w-12"
-        >
-          <FaMicrophone className="h-8 w-8" />
-        </Button>
+      <div className="flex items-center justify-center gap-4 py-2 px-4 bg-zinc-900 h-[8vh]">
+        <div className="flex items-center justify-normal rounded-full pl-3 gap-1 bg-zinc-700">
+          <Popover>
+            <PopoverTrigger>
+              <IoIosArrowUp className="h-6 w-6 cursor-pointer" />
+            </PopoverTrigger>
+            <PopoverContent>Share screen</PopoverContent>
+          </Popover>
+          <Button
+            // onClick={closeVideoCall}
+            className="rounded-full h-12 w-12 px-[14px]"
+          >
+            <FaVideo className="h-8 w-8" />
+          </Button>
+        </div>
+        <div className="flex items-center justify-normal rounded-full pl-3 gap-1 bg-zinc-700">
+          <Popover>
+            <PopoverTrigger>
+              <IoIosArrowUp className="h-6 w-6 cursor-pointer" />
+            </PopoverTrigger>
+            <PopoverContent>Share Audio</PopoverContent>
+          </Popover>
+          <Button
+            variant="secondary"
+            // onClick={closeVideoCall}
+            className="rounded-full h-12 w-12"
+          >
+            <FaMicrophone className="h-8 w-8" />
+          </Button>
+        </div>
         <Button
           variant="destructive"
           onClick={closeVideoCall}
