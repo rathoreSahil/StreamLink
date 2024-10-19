@@ -145,6 +145,20 @@ const Meet = ({ params }: MeetParams) => {
           remoteVideoRef.current.classList.remove("hidden");
         }
       };
+
+      track.onmute = () => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = null;
+          remoteVideoRef.current.classList.add("hidden");
+        }
+      };
+
+      track.onended = () => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = null;
+          remoteVideoRef.current.classList.add("hidden");
+        }
+      };
     };
 
     return () => {
@@ -168,7 +182,6 @@ const Meet = ({ params }: MeetParams) => {
 
         remoteVideoRef.current.src = "";
         remoteVideoRef.current.srcObject = null;
-        remoteVideoRef.current.classList.add("hidden");
       }
 
       if (localVideoRef.current && localVideoRef.current.srcObject) {
@@ -213,12 +226,11 @@ const Meet = ({ params }: MeetParams) => {
           autoPlay
         ></video>
       </div>
-      <div className="flex items-center justify-center gap-4 py-2 px-8 bg-gray-800 mx-auto rounded-3xl w-2/5 h-[10vh]">
+      <div className="flex items-center justify-center gap-4 py-2 px-4 bg-gray-800 mx-auto rounded-3xl w-2/5 h-[8vh]">
         <Button
-          // variant="secondary"
           // onClick={closeVideoCall}
           className="rounded-full h-12 w-12 px-[14px]"
-        >
+        >\
           <FaVideo className="h-8 w-8" />
         </Button>
         <Button
