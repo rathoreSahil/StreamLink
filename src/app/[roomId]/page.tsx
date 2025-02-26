@@ -3,19 +3,30 @@
 import { Button } from "@/components/ui/button";
 import { useSocket } from "@/context/socket-provider";
 import { handleGetUserMediaError } from "@/webrtc/error";
-import { createPeerConnection, getUserMedia } from "@/webrtc/utils";
+import {
+  createPeerConnection,
+  getMediaDevicesInfo,
+  getUserMedia,
+} from "@/webrtc/utils";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { FaPhoneSlash } from "react-icons/fa";
 import { FaVideo } from "react-icons/fa";
 import { FaMicrophone } from "react-icons/fa";
-import { IoIosArrowUp } from "react-icons/io";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ChevronUp } from "lucide-react";
 
 type MeetParams = {
   params: { roomId: string };
@@ -28,8 +39,36 @@ const Meet = ({ params }: MeetParams) => {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
+  const [audioInputElements, setAudioInputElements] = useState(
+    [] as MediaDeviceInfo[]
+  );
+  const [audioOutputElements, setAudioOutputElements] = useState(
+    [] as MediaDeviceInfo[]
+  );
+  const [videoInputElements, setVideoInputElements] = useState(
+    [] as MediaDeviceInfo[]
+  );
+
+  const [selectedAudioInputElement, setSelectedAudioInputElement] = useState({
+    label: "Default Input",
+  } as MediaDeviceInfo);
+  const [selectedAudioOutputElement, setSelectedAudioOutputElement] = useState({
+    label: "Default Output",
+  } as MediaDeviceInfo);
+  const [selectedVideoInputElement, setSelectedVideoInputElement] = useState({
+    label: "Default Input",
+  } as MediaDeviceInfo);
+
   const [peerConnection, setPeerConnection] =
     useState<RTCPeerConnection | null>();
+
+  useEffect(() => {
+    console.log({
+      audioInputElements,
+      audioOutputElements,
+      videoInputElements,
+    });
+  }, [audioInputElements, audioOutputElements, videoInputElements]);
 
   useEffect(() => {
     socket?.emit("join-room", roomId);
@@ -65,9 +104,23 @@ const Meet = ({ params }: MeetParams) => {
   }, [peerConnection]);
 
   useEffect(() => {
-    if (!peerConnection) return;
-    navigator.mediaDevices.ondevicechange = async () => {};
-  }, [peerConnection]);
+    const updateDeviceList = () => {
+      const { audioInputList, audioOutputList, videoInputList } =
+        getMediaDevicesInfo();
+      setAudioInputElements(audioInputList);
+      setAudioOutputElements(audioOutputList);
+      setVideoInputElements(videoInputList);
+    };
+
+    updateDeviceList();
+    navigator.mediaDevices.ondevicechange = () => {
+      updateDeviceList();
+    };
+
+    return () => {
+      navigator.mediaDevices.ondevicechange = null;
+    };
+  }, []);
 
   useEffect(() => {
     if (!peerConnection) return;
@@ -240,29 +293,67 @@ const Meet = ({ params }: MeetParams) => {
         <div className="flex items-center justify-normal rounded-full pl-3 gap-1 bg-zinc-700">
           <Popover>
             <PopoverTrigger>
-              <IoIosArrowUp className="h-6 w-6 cursor-pointer" />
+              <ChevronUp />
             </PopoverTrigger>
-            <PopoverContent>Share screen</PopoverContent>
+            <PopoverContent className="rounded-full border-none px-0 py-0 mb-6 w-min">
+              <Select>
+                <SelectTrigger className="w-48 rounded-full focus:ring-0">
+                  <SelectValue placeholder={selectedVideoInputElement.label} />
+                </SelectTrigger>
+                <SelectContent>
+                  {...videoInputElements.map((el, idx) => {
+                    return (
+                      <SelectItem key={idx} value={el.deviceId}>
+                        {el.label}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </PopoverContent>
           </Popover>
-          <Button
-            // onClick={closeVideoCall}
-            className="rounded-full h-12 w-12 px-[14px]"
-          >
+
+          <Button className="rounded-full h-12 w-12 px-[14px]">
             <FaVideo className="h-8 w-8" />
           </Button>
         </div>
         <div className="flex items-center justify-normal rounded-full pl-3 gap-1 bg-zinc-700">
           <Popover>
             <PopoverTrigger>
-              <IoIosArrowUp className="h-6 w-6 cursor-pointer" />
+              <ChevronUp />
             </PopoverTrigger>
-            <PopoverContent>Share Audio</PopoverContent>
+            <PopoverContent className="bg-gray-800 rounded-full border-none px-2 py-1 mb-6 flex items-center justify-center gap-2">
+              <Select>
+                <SelectTrigger className="w-48 rounded-full focus-visible:ring-0 focus:ring-0">
+                  <SelectValue placeholder={selectedAudioInputElement.label} />
+                </SelectTrigger>
+                <SelectContent>
+                  {audioInputElements.map((el, idx) => {
+                    return (
+                      <SelectItem key={idx} value={el.deviceId}>
+                        {el.label}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <Select>
+                <SelectTrigger className="w-48 rounded-full focus:ring-0">
+                  <SelectValue placeholder={selectedAudioOutputElement.label} />
+                </SelectTrigger>
+                <SelectContent>
+                  {audioOutputElements.map((el, idx) => {
+                    return (
+                      <SelectItem key={idx} value={el.deviceId}>
+                        {el.label}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </PopoverContent>
           </Popover>
-          <Button
-            variant="secondary"
-            // onClick={closeVideoCall}
-            className="rounded-full h-12 w-12"
-          >
+          <Button variant="secondary" className="rounded-full h-12 w-12">
             <FaMicrophone className="h-8 w-8" />
           </Button>
         </div>

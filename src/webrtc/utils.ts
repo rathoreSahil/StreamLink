@@ -45,4 +45,27 @@ const createPeerConnection = async (): Promise<RTCPeerConnection> => {
   return myPeerConnection;
 };
 
-export { getUserMedia, createPeerConnection };
+const getMediaDevicesInfo = () => {
+  const audioInputList: MediaDeviceInfo[] = [];
+  const audioOutputList: MediaDeviceInfo[] = [];
+  const videoInputList: MediaDeviceInfo[] = [];
+  navigator.mediaDevices.enumerateDevices().then((devices) => {
+    devices.forEach((device) => {
+      if (device.kind === "audioinput") {
+        audioInputList.push(device);
+      } else if (device.kind === "audiooutput") {
+        audioOutputList.push(device);
+      } else {
+        videoInputList.push(device);
+      }
+    });
+  });
+
+  return {
+    audioInputList,
+    audioOutputList,
+    videoInputList,
+  };
+};
+
+export { getUserMedia, createPeerConnection, getMediaDevicesInfo };
