@@ -49,15 +49,12 @@ const Meet = ({ params }: MeetParams) => {
     [] as MediaDeviceInfo[]
   );
 
-  const [selectedAudioInputElement, setSelectedAudioInputElement] = useState({
-    label: "Default Input",
-  } as MediaDeviceInfo);
-  const [selectedAudioOutputElement, setSelectedAudioOutputElement] = useState({
-    label: "Default Output",
-  } as MediaDeviceInfo);
-  const [selectedVideoInputElement, setSelectedVideoInputElement] = useState({
-    label: "Default Input",
-  } as MediaDeviceInfo);
+  const [selectedAudioInputElement, setSelectedAudioInputElement] =
+    useState("");
+  const [selectedAudioOutputElement, setSelectedAudioOutputElement] =
+    useState("");
+  const [selectedVideoInputElement, setSelectedVideoInputElement] =
+    useState("");
 
   const [peerConnection, setPeerConnection] =
     useState<RTCPeerConnection | null>();
@@ -81,7 +78,7 @@ const Meet = ({ params }: MeetParams) => {
       })
       .catch((error) => {
         console.error(error);
-        toast.error("Error creating peer connection");
+        toast.error("Error creating peer connection" + error.message);
       });
   }, []);
 
@@ -104,9 +101,72 @@ const Meet = ({ params }: MeetParams) => {
   }, [peerConnection]);
 
   useEffect(() => {
-    const updateDeviceList = () => {
+    async function changeAudioInput() {
+      if (!peerConnection) return;
+      const constraints = {
+        audio: { deviceId: { exact: selectedAudioInputElement } },
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Replace existing audio tracks in the peer connection
+      const audioTrack = stream.getAudioTracks()[0];
+      const sender = peerConnection
+        .getSenders()
+        .find((s) => s.track?.kind === "audio");
+      if (sender) {
+        sender.replaceTrack(audioTrack);
+      }
+    }
+    changeAudioInput();
+  }, [peerConnection, selectedAudioInputElement]);
+
+  useEffect(() => {
+    const changeAudioOutput = async () => {
+      if (remoteVideoRef.current && "setSinkId" in remoteVideoRef.current) {
+        try {
+          await remoteVideoRef.current.setSinkId(selectedAudioOutputElement);
+          console.log(`Audio output changed to ${selectedAudioOutputElement}`);
+        } catch (error) {
+          console.error("Error changing audio output:", error);
+        }
+      } else {
+        console.warn(
+          "Audio output selection is not supported in this browser."
+        );
+      }
+    };
+    changeAudioOutput();
+  }, [selectedAudioOutputElement]);
+
+  useEffect(() => {
+    const changeVideoInput = async () => {
+      if (!peerConnection) return;
+      const constraints = {
+        video: { deviceId: { exact: selectedVideoInputElement } },
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      // Replace the track in the WebRTC connection
+      const videoTrack = stream.getVideoTracks()[0];
+      const sender = peerConnection
+        .getSenders()
+        .find((s) => s.track?.kind === "video");
+      if (sender) {
+        sender.replaceTrack(videoTrack);
+      }
+    };
+    changeVideoInput();
+  }, [peerConnection, selectedVideoInputElement]);
+
+  useEffect(() => {
+    const updateDeviceList = async () => {
       const { audioInputList, audioOutputList, videoInputList } =
-        getMediaDevicesInfo();
+        await getMediaDevicesInfo();
       setAudioInputElements(audioInputList);
       setAudioOutputElements(audioOutputList);
       setVideoInputElements(videoInputList);
@@ -296,9 +356,13 @@ const Meet = ({ params }: MeetParams) => {
               <ChevronUp />
             </PopoverTrigger>
             <PopoverContent className="rounded-full border-none px-0 py-0 mb-6 w-min">
-              <Select>
+              <Select
+                onValueChange={(val) => {
+                  setSelectedVideoInputElement(val);
+                }}
+              >
                 <SelectTrigger className="w-48 rounded-full focus:ring-0">
-                  <SelectValue placeholder={selectedVideoInputElement.label} />
+                  <SelectValue placeholder="Select Video Input" />
                 </SelectTrigger>
                 <SelectContent>
                   {...videoInputElements.map((el, idx) => {
@@ -323,9 +387,11 @@ const Meet = ({ params }: MeetParams) => {
               <ChevronUp />
             </PopoverTrigger>
             <PopoverContent className="bg-gray-800 rounded-full border-none px-2 py-1 mb-6 flex items-center justify-center gap-2">
-              <Select>
+              <Select
+                onValueChange={(val) => setSelectedAudioInputElement(val)}
+              >
                 <SelectTrigger className="w-48 rounded-full focus-visible:ring-0 focus:ring-0">
-                  <SelectValue placeholder={selectedAudioInputElement.label} />
+                  <SelectValue placeholder="Select Audio Input" />
                 </SelectTrigger>
                 <SelectContent>
                   {audioInputElements.map((el, idx) => {
@@ -337,9 +403,11 @@ const Meet = ({ params }: MeetParams) => {
                   })}
                 </SelectContent>
               </Select>
-              <Select>
+              <Select
+                onValueChange={(val) => setSelectedAudioOutputElement(val)}
+              >
                 <SelectTrigger className="w-48 rounded-full focus:ring-0">
-                  <SelectValue placeholder={selectedAudioOutputElement.label} />
+                  <SelectValue placeholder="Select Audio Output" />
                 </SelectTrigger>
                 <SelectContent>
                   {audioOutputElements.map((el, idx) => {
